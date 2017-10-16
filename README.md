@@ -51,7 +51,7 @@ Clone the repository:
 In a terminal run the following in the directory where you would like to clone the Rainforest Livefyre automation repository:
 ```bash
 git clone https://github.com/burbon000/rainforest_livefyre_automation.git
-cd livefyre-automation
+cd rainforest_livefyre_automation
 ```
 
 
