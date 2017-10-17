@@ -90,7 +90,7 @@ test(id: 191991, title: "Review Post and Reply") do
     review = "User1 Review " + random_num
     star_rating = rand(0...9)
     rating_perc = star_rating*10 + 10
-    rating_style = "width: #{rating_perc}%;"
+    rating_style = "width: #{rating_perc}%"
 
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
@@ -105,11 +105,11 @@ test(id: 191991, title: "Review Post and Reply") do
 
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", wait: 20) do
+      expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']") 
       expect(page).not_to have_css('iframe', wait: 5)
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
       expect(page).to have_content(review)
-      expect(find(:css, ".fyre-reviews-rated>label")['style']).to eql(rating_style.to_s)  
     end
 
     page.save_screenshot('screenshot_step_4.png')
