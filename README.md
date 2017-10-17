@@ -57,20 +57,21 @@ cd rainforest_livefyre_automation
 
 Install Ruby Version Manager(RVM) to manage your Ruby environments:
 
-Run the following command:
 ```bash
 curl -L https://get.rvm.io | bash -s stable
 ```
 To verify installation, run: 
+
 ```bash
 rvm -v
 ```
 You must use version 2.3.3 of Ruby. To install version 2.3.3 of Ruby, run the following:
+
 ```bash
 rvm install 2.3.3
 ```
+
 If you have multiple versions of Ruby installed, RVM will automatically detect the version of Ruby used by an application based on the Gemfile.
-```
 
 Finally you must install the dependencies:
 
