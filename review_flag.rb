@@ -65,10 +65,10 @@ test(id: 191991, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
 
     # action
-    page.find(:css, 'div.fyre-reviews-stats').hover
-    click_link_or_button 'Write review'
+    page.find(:css, 'button', :text => 'Write review').click
 
     # response
+    expect(page).to have_no_selector(:css, 'button', :text => 'Write review', wait: 10)
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do  
       expect(page).to have_css('.goog-ratings')
       expect(page).to have_content("Post review")
