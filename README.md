@@ -65,9 +65,9 @@ To verify installation, run:
 ```bash
 rvm -v
 ```
-You must use version 2.1.2 of Ruby. To install version 2.1.2 of Ruby, run the following:
+You must use version 2.3.3 of Ruby. To install version 2.3.3 of Ruby, run the following:
 ```bash
-rvm install 2.1.2
+rvm install 2.3.3
 ```
 If you have multiple versions of Ruby installed, RVM will automatically detect the version of Ruby used by an application based on the Gemfile.
 ```

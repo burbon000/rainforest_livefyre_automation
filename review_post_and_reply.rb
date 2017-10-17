@@ -64,11 +64,10 @@ test(id: 191991, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
 
     # action
-    page.find(:css, 'div.fyre-reviews-stats').hover
-    click_link_or_button 'Write review'
+    page.find(:css, 'button', :text => 'Write review').click
 
     # response
-    #within(:css, "div[class^='fyre-editor ']") do
+    expect(page).to have_no_selector(:css, 'button', :text => 'Write review', wait: 10)
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do  
       expect(page).to have_content("Post review")
       expect(page).to have_css('.goog-ratings')
@@ -97,7 +96,6 @@ test(id: 191991, title: "Review Post and Reply") do
     rating_style = "width: #{rating_perc}%;"
 
     # action
-    #within(:css, "div[class^='fyre-editor ']") do
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
       page.find("input[class='fyre-editor-title']").set(title)
       within_frame(find(:css, '[aria-label=editor]')) do
@@ -109,7 +107,7 @@ test(id: 191991, title: "Review Post and Reply") do
     end
 
     # response
-    within(:css, "article[data-author-id^='#{user1_id}']", wait: 10) do
+    within(:css, "article[data-author-id^='#{user1_id}']", wait: 20) do
       expect(page).not_to have_css('iframe', wait: 5)
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
@@ -136,11 +134,9 @@ test(id: 191991, title: "Review Post and Reply") do
 
     # Currently the new post is not visible in a sorted list for up to 10 minutes. This is a bug.
     # => work around is to either wait 10 minutes or not use the sort by newest.
-    for i in 1..11 do
-      page.go_back
-      sleep(30)
-      page.go_forward
-      sleep(30)
+    for i in 1..60 do
+      visit base_url2
+      sleep(10)
     end
     
     page.save_screenshot('screenshot_step_5.png')
@@ -192,7 +188,7 @@ test(id: 191991, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
 
     # action
-    page.find(:css, 'div.fyre-reviews-stats').hover
+    page.find(:css, 'button', :text => 'Write review').hover
     # Currently there is a bug that prevents using the latest because it takes 10 minutes for the Post to show up
     within(:css, '.fyre-stream-sort') do
       page.find(:css, 'label', :text => 'Most helpful').click
