@@ -135,7 +135,7 @@ test(id: 191991, title: "Review Post and Reply") do
     # Currently the new post is not visible in a sorted list for up to 10 minutes. This is a bug.
     # => work around is to either wait 10 minutes or not use the sort by newest.
     for i in 1..60 do
-      visit base_url2
+      #visit base_url2
       sleep(10)
     end
     
