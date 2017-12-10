@@ -14,13 +14,12 @@ In a terminal type the following command:
 ```bash
 xcode-select --install
 ```
-You should see a pop up saying that “xcode-select” requires the command line developer tools. Click Install
-You will have to accept the license agreement
+You should see a pop up saying that “xcode-select” requires the command line developer tools. Click Install. You will have to accept the license agreement
 
 
 Install Homebrew:
 
-You can get the latest command to install Homebrew from their website at https://brew.sh/
+You can get the latest command to install Homebrew from their website at https://brew.sh/.
 Alternatively you should be able to run the following command from a terminal:
 ```bash
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -91,7 +90,7 @@ bundle exec rainforest_test test_case.rb
 
 
 
-## Advance features
+## Advanced features
 
 ### Timeouts
 

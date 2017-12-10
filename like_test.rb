@@ -5,7 +5,7 @@
 test(id: 27781, title: "Like") do
   # You can use any of the following variables in your code:
   # - []
-  
+  Capybara.save_path = "like_test/"
   random_num = rand(100000000...999999999).to_s
   username_a = 'rftester483'
   password_a = ''
