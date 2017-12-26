@@ -76,11 +76,12 @@ test(id: 27781, title: "Like") do
     # *** START EDITING HERE ***
     comment = 'Test Comment'
     # action
-    within_frame(find(:css, '[aria-label=editor]')) do
-      expect(page.find(:css, 'p')['text']).to eql(nil)
-      page.find(:css, "body[role='textbox']").click
-      page.find(:css, "body[role='textbox']").native.send_keys(comment)
+    expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
+    page.find(:css, ".fyre-editor-editable.editable.fyre-editor-field").click
+    for x in 0...comment.length do
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').native.send_keys(comment[x])
     end
+    page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field', :text => comment)
     page.find("div[role='button']", :text => 'Post comment').click
 
     # response

@@ -21,6 +21,9 @@ test(id: 191991, title: "Review Post and Reply") do
       :desired_capabilities => @desired_cap
     )
   end
+  Capybara.register_driver :browser_stack do |app|
+    Capybara::Selenium::Driver.new(app, :browser => :chrome)
+  end  
   random_num = rand(10000000...99999999).to_s
   
   user1_id = "user1_" + random_num
@@ -31,7 +34,7 @@ test(id: 191991, title: "Review Post and Reply") do
 
   window = Capybara.current_session.driver.browser.manage.window
   #window.maximize
-  
+
   step id: 1,
       action: "Review app url loads",
       response: "Do you see Review app loaded with 'Average User Rating', 'Rating Breakdown',"\
@@ -83,9 +86,7 @@ test(id: 191991, title: "Review Post and Reply") do
       expect(page).to have_css('.goog-ratings')
       expect(find(:css, '.goog-ratings')['aria-valuenow']).to eql(nil)
       expect(page.find(:css, '.fyre-editor-title')['placeholder']).to eql("Title...")
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
-      end
+      expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
     end
 
     #page.save_screenshot('screenshot_step_3.png')
@@ -108,13 +109,11 @@ test(id: 191991, title: "Review Post and Reply") do
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
       page.find(:css, "input[class='fyre-editor-title']").set(title)
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...review.length do
-          page.find(:css, '.editable.fyre-editor-field>p').native.send_keys(review[x])
-        end
-        page.find(:css, 'p', :text => review)
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+      for x in 0...review.length do
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').native.send_keys(review[x])
       end
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field', :text => review)
       all(:css, "span[class*='ratings-star']")[star_rating].click
       page.find(:css, "div[role='button']", :text => 'Post review').click
     end
@@ -122,7 +121,7 @@ test(id: 191991, title: "Review Post and Reply") do
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", wait: 20) do
       expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']") 
-      expect(page).not_to have_css('iframe', wait: 5)
+      expect(page).to have_no_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field', wait: 5)
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
       expect(page).to have_content(review)
@@ -164,7 +163,7 @@ test(id: 191991, title: "Review Post and Reply") do
       page.find(:css, "li", :text => 'Delete').click
     end
     visit base_url1
-
+    
     # response
     expect(page).to have_no_selector(:css, "article[data-author-id^='#{user1_id}']", :visible => true, wait: 40)
 
@@ -175,5 +174,4 @@ test(id: 191991, title: "Review Post and Reply") do
 
   page.find(:css, "a[role='button']", :text => user1_id).hover
   page.find(:css, "a[role='button']", :text => 'Sign out').click
-
 end

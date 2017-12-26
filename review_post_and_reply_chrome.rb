@@ -22,6 +22,9 @@ test(id: 42097, title: "Review Post and Reply") do
       :desired_capabilities => @desired_cap
     )
   end
+  Capybara.register_driver :browser_stack do |app|
+    Capybara::Selenium::Driver.new(app, :browser => :chrome)
+  end
   random_num = rand(10000000...99999999).to_s
   
   user1_id = "user1_" + random_num
@@ -87,9 +90,7 @@ test(id: 42097, title: "Review Post and Reply") do
       expect(page).to have_content("Post review")
       expect(find(:css, '.goog-ratings')['aria-valuenow']).to eql(nil)
       expect(page.find(:css, '.fyre-editor-title')['placeholder']).to eql("Title...")
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
-      end
+      expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
     end
 
     #page.save_screenshot('screenshot_step_3.png')
@@ -112,13 +113,11 @@ test(id: 42097, title: "Review Post and Reply") do
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
       page.find(:css, "input[class='fyre-editor-title']").set(title)
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...review.length do
-          page.find(:css, '.editable.fyre-editor-field>p').send_keys(review[x])
-        end
-        page.find(:css, 'p', :text => review)
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+      for x in 0...review.length do
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').native.send_keys(review[x])
       end
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field', :text => review)
       all(:css, "span[class*='ratings-star']")[star_rating].click
       page.find(:css, "div[role='button']", :text => 'Post review', :match => :first).click
     end
@@ -126,7 +125,7 @@ test(id: 42097, title: "Review Post and Reply") do
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", wait: 20, :match => :first) do
       expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']")
-      expect(page).not_to have_css('iframe', wait: 5)
+      expect(page).to have_no_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field', wait: 5)
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
       expect(page).to have_content(review) 
@@ -244,9 +243,7 @@ test(id: 42097, title: "Review Post and Reply") do
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
       expect(page).to have_content('Post')
       expect(page).to have_content('Share')
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
-      end
+      expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
     end
 
     #page.save_screenshot('screenshot_step_9.png')
@@ -265,13 +262,11 @@ test(id: 42097, title: "Review Post and Reply") do
 
     # action
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...reply.length do
-          page.find(:css, '.editable.fyre-editor-field>p').send_keys(reply[x])
-        end
-        page.find(:css, 'p', :text => reply)
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+      for x in 0...reply.length do
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').native.send_keys(reply[x])
       end
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field', :text => reply)     
       page.find(:css, "div[role='button']", :text => 'Post', :match => :first).click
     end
 
@@ -296,17 +291,17 @@ test(id: 42097, title: "Review Post and Reply") do
     
     # action
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_selector(:css, 'iframe')
+      expect(page).to have_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field')
       page.find(:css, "a", :text => '1 Reply').click
     end
 
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_no_selector(:css, 'iframe', wait: 10)
+      expect(page).to have_no_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field', wait: 10)
     end
     
-    page.find(:css, "a[role='button']", :text => user2_id).hover
-    page.find(:css, "a[role='button']", :text => 'Sign out').click
+    #page.find(:css, "a[role='button']", :text => user2_id).hover
+    #page.find(:css, "a[role='button']", :text => 'Sign out').click
 
     #page.save_screenshot('screenshot_step_11.png')
     # *** STOP EDITING HERE ***

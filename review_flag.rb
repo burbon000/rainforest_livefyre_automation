@@ -2,19 +2,32 @@
 # https://lemonsarebetter.herokuapp.com/widget.php?network=rainforestqa.fyre.co&site=383920&articleId=ekrfjherf34823&appType=reviews&userId=user1_9080908090
 
 
-test(id: 191991, title: "Review Post and Reply") do
+test(id: 42126, title: "Review Flag") do
   # You can use any of the following variables in your code:
   # - []
   
   # Random number to append to user_ids
   Capybara.default_selector = :css
+  Capybara.register_driver :sauce do |app|
+    @desired_cap = {
+      'platform': "Windows 7",
+      'browserName': "firefox",
+      'version': "45",
+      'screenResolution': "1440x900",
+      'name': "livefyre_review_flag",
+    }
+    Capybara::Selenium::Driver.new(app,
+      :browser => :remote,
+      :url => 'http://RFAutomation:5328f84f-5623-41ba-a81e-b5daff615024@ondemand.saucelabs.com:80/wd/hub',
+      :desired_capabilities => @desired_cap
+    )
+  end
   random_num = rand(10000000...99999999).to_s
   
   user1_id = "user1_" + random_num
   user2_id = "user2_" + random_num
 
   # App url for the two different users
-
   base_url1 = "https://lemonsarebetter.herokuapp.com/widget.php?network=rainforestqa.fyre.co"\
     "&site=383920&articleId=ekrfjherf34823&appType=reviews&userId=user1_#{random_num}"
   base_url2 = "https://lemonsarebetter.herokuapp.com/widget.php?network=rainforestqa.fyre.co"\
@@ -38,7 +51,7 @@ test(id: 191991, title: "Review Post and Reply") do
     expect(page).to have_content('Sign in')
     expect(page).to have_content('Write review')
 
-    page.save_screenshot('screenshot_step_1.png')
+    #page.save_screenshot('screenshot_step_1.png')
     # *** STOP EDITING HERE ***
   end
 
@@ -52,8 +65,8 @@ test(id: 191991, title: "Review Post and Reply") do
 
     # reponse
     expect(page).to have_selector(:css, "a[role='button']", :text => user1_id)
-
-    page.save_screenshot('screenshot_step_2.png')
+    
+    #page.save_screenshot('screenshot_step_2.png')
     # *** STOP EDITING HERE ***
   end
 
@@ -79,7 +92,7 @@ test(id: 191991, title: "Review Post and Reply") do
       end
     end
 
-    page.save_screenshot('screenshot_step_3.png')
+    #page.save_screenshot('screenshot_step_3.png')
     # *** STOP EDITING HERE ***
   end
 
@@ -98,13 +111,16 @@ test(id: 191991, title: "Review Post and Reply") do
 
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
-      page.find("input[class='fyre-editor-title']").set(title)
+      page.find(:css, "input[class='fyre-editor-title']").set(title)
       within_frame(find(:css, '[aria-label=editor]')) do
         page.find(:css, '.editable.fyre-editor-field>p').click
-        page.find(:css, '.editable.fyre-editor-field>p').native.send_keys(review)
+        for x in 0...review.length do
+          page.find(:css, '.editable.fyre-editor-field>p').native.send_keys(review[x])
+        end
+        page.find(:css, 'p', :text => review)
       end
       all(:css, "span[class*='ratings-star']")[star_rating].click
-      page.find("div[role='button']", :text => 'Post review').click
+      page.find(:css, "div[role='button']", :text => 'Post review').click
     end
 
     # response
@@ -116,7 +132,7 @@ test(id: 191991, title: "Review Post and Reply") do
       expect(page).to have_content(review) 
     end
 
-    page.save_screenshot('screenshot_step_4.png')
+    #page.save_screenshot('screenshot_step_4.png')
     # *** STOP EDITING HERE ***
   end
 
@@ -125,22 +141,27 @@ test(id: 191991, title: "Review Post and Reply") do
       response: "Do you see 'Sign in' option ?" do
    
     # *** START EDITING HERE ***
-
-    # action
-    page.find(:css, "a[role='button']", :text => user1_id).hover
-    page.find(:css, "a[role='button']", :text => 'Sign out').click
-
-    # response
-    expect(page).to have_content('Sign in')
+ 
 
     # Currently the new post is not visible in a sorted list for up to 10 minutes. The
     # => work around is to either wait 10 minutes or not use the sort by newest.
-    for i in 1..60 do
-      visit base_url2
-      sleep(10)
+    #for i in 1..10 do
+    #  page.find(:css, "a[role='button']", :text => user1_id).click     
+    #  sleep(60)
+    #end
+
+    # action
+    within(:css, '.fyre-login-bar') do
+      page.find(:css, ".fyre-user-profile-link.fyre-user-loggedin").hover
+      page.find(:css, "a[title='Sign out']").click
     end
     
-    page.save_screenshot('screenshot_step_5.png')
+    # response
+    expect(page).to have_content('Sign in')
+
+
+
+    #page.save_screenshot('screenshot_step_5.png')
     # *** STOP EDITING HERE ***
   end
 
@@ -160,7 +181,7 @@ test(id: 191991, title: "Review Post and Reply") do
     expect(page).to have_content('Sign in')
     expect(page).to have_content('Write review')
 
-    page.save_screenshot('screenshot_step_6.png')
+    #page.save_screenshot('screenshot_step_6.png')
     # *** STOP EDITING HERE ***
 
   end
@@ -173,12 +194,16 @@ test(id: 191991, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
 
     # action
-    page.find(:css, "a[role='button']", :text => 'Sign in').click
+    within(:css, '.fyre-login-bar') do
+      page.find(:css, "a[role='button']", :text => 'Sign in').click
+    end
 
     # reponse 
-    expect(page).to have_selector(:css, "a[role='button']", :text => user2_id)
+    within(:css, '.fyre-login-bar') do
+      expect(page).to have_selector(:css, "a[role='button']", :text => user2_id)
+    end
 
-    page.save_screenshot('screenshot_step_7.png')
+    #page.save_screenshot('screenshot_step_7.png')
     # *** STOP EDITING HERE ***
 
   end
@@ -189,17 +214,19 @@ test(id: 191991, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
 
     # action
-    page.find(:css, 'div.fyre-reviews-stats').hover
+    #within(:css, '.fyre-widget') do
+    #  page.find(:css, '.fyre-reviews-write').hover
+    #end
     # Currently there is a bug that prevents using the latest because it takes 10 minutes for the Post to show up
-    within(:css, '.fyre-stream-sort') do
-      page.find(:css, 'label', :text => 'Most helpful').click
-      page.find(:css, 'a', :text => 'Newest').click
-    end
+    #within(:css, '.fyre-stream-sort') do
+    #  page.find(:css, 'label', :text => 'Most helpful').click
+    #  page.find(:css, 'a', :text => 'Newest').click
+    #end
 
     # response
     expect(page).to have_selector(:css, "article[data-author-id^='#{user1_id}']")
 
-    page.save_screenshot('screenshot_step_8.png')
+    #page.save_screenshot('screenshot_step_8.png')
     # *** STOP EDITING HERE ***
 
   end
@@ -213,7 +240,7 @@ test(id: 191991, title: "Review Post and Reply") do
 
     # action
     within(:css, "article[data-author-id^='#{user1_id}']") do
-      page.find("a", :text => 'More').click
+      page.find(:css, "a", :text => 'More').click
     end
     
     # response
@@ -221,7 +248,7 @@ test(id: 191991, title: "Review Post and Reply") do
       expect(page).to have_selector(:css, "li", :text => 'Flag')
     end
 
-    page.save_screenshot('screenshot_step_9.png')
+    #page.save_screenshot('screenshot_step_9.png')
     # *** STOP EDITING HERE ***
 
   end
@@ -243,7 +270,7 @@ test(id: 191991, title: "Review Post and Reply") do
       expect(page).to have_content("Flag #{user1_id}'s review")
     end
 
-    page.save_screenshot('screenshot_step_10.png')
+    #page.save_screenshot('screenshot_step_10.png')
     # *** STOP EDITING HERE ***
 
   end
@@ -256,15 +283,15 @@ test(id: 191991, title: "Review Post and Reply") do
 
     # action
     within(:css, '.fyre-modal') do   
-      expect(page.find(:css, 'select')['value']).to eql('none')
+      expect(page.find(:css, "option[selected='selected']")['value']).to eql('none')
       page.select 'Offensive', :from => 'flagType'    
     end
 
     within(:css, '.fyre-modal') do   
-      expect(page.find(:css, 'select')['value']).to eql('offensive')
+      expect(page).to have_content('Offensive')
     end
 
-    page.save_screenshot('screenshot_step_10.png')
+    #page.save_screenshot('screenshot_step_10.png')
     # *** STOP EDITING HERE ***
 
   end
@@ -283,11 +310,12 @@ test(id: 191991, title: "Review Post and Reply") do
     # response
     expect(page).to have_content('Review has been flagged.', wait: 10)
 
-    page.save_screenshot('screenshot_step_11.png')
+    #page.save_screenshot('screenshot_step_11.png')
     # *** STOP EDITING HERE ***
 
   end
+
   page.find(:css, "a[role='button']", :text => user2_id).hover
   page.find(:css, "a[role='button']", :text => 'Sign out').click
-  #sleep(10)
+ 
 end

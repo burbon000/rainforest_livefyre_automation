@@ -2,7 +2,7 @@
 # https://lemonsarebetter.herokuapp.com/widget.php?network=rainforestqa.fyre.co&site=383920&articleId=ekrfjherf34823&appType=reviews&userId=user1_9080908090
 
 
-test(id: 42097, title: "Review Post and Reply") do
+test(id: 42126, title: "Review Flag") do
   # You can use any of the following variables in your code:
   # - []
   
@@ -13,14 +13,16 @@ test(id: 42097, title: "Review Post and Reply") do
       'platform': "Windows 7",
       'browserName': "firefox",
       'version': "45",
-      'screenResolution': "1440x900",
-      'name': "livefyre_review_post_and_reply",
+      'name': "livefyre_review_flag",
     }
     Capybara::Selenium::Driver.new(app,
       :browser => :remote,
       :url => 'http://RFAutomation:5328f84f-5623-41ba-a81e-b5daff615024@ondemand.saucelabs.com:80/wd/hub',
       :desired_capabilities => @desired_cap
     )
+  end
+  Capybara.register_driver :browser_stack do |app|
+    Capybara::Selenium::Driver.new(app, :browser => :chrome)
   end
   random_num = rand(10000000...99999999).to_s
   
@@ -46,7 +48,7 @@ test(id: 42097, title: "Review Post and Reply") do
     visit base_url1
 
     # response
-    expect(page).to have_content('Average User Rating', wait: 90)
+    expect(page).to have_content('Average User Rating', wait: 30)
     expect(page).to have_content('Rating Breakdown')
     expect(page).to have_content('Sign in')
     expect(page).to have_content('Write review')
@@ -61,7 +63,7 @@ test(id: 42097, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
     
     # action    
-    page.find(:css, "a[role='button']", :text => 'Sign in', :match => :first).click
+    page.find(:css, "a[role='button']", :text => 'Sign in').click
 
     # reponse
     expect(page).to have_selector(:css, "a[role='button']", :text => user1_id)
@@ -82,14 +84,12 @@ test(id: 42097, title: "Review Post and Reply") do
 
     # response
     expect(page).to have_no_selector(:css, 'button', :text => 'Write review', wait: 10)
-    within(:css, '.fyre-editor.fyre-reviews-editor.fyre-editor-small') do  
+    within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do  
       expect(page).to have_css('.goog-ratings')
       expect(page).to have_content("Post review")
       expect(find(:css, '.goog-ratings')['aria-valuenow']).to eql(nil)
       expect(page.find(:css, '.fyre-editor-title')['placeholder']).to eql("Title...")
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
-      end
+      expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
     end
 
     #page.save_screenshot('screenshot_step_3.png')
@@ -112,21 +112,19 @@ test(id: 42097, title: "Review Post and Reply") do
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
       page.find(:css, "input[class='fyre-editor-title']").set(title)
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...review.length do
-          page.find(:css, '.editable.fyre-editor-field>p').send_keys(review[x])
-        end
-        page.find(:css, 'p', :text => review)
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+      for x in 0...review.length do
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').native.send_keys(review[x])
       end
+      page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field', :text => review)
       all(:css, "span[class*='ratings-star']")[star_rating].click
-      page.find(:css, "div[role='button']", :text => 'Post review', :match => :first).click
+      page.find(:css, "div[role='button']", :text => 'Post review').click
     end
 
     # response
-    within(:css, "article[data-author-id^='#{user1_id}']", wait: 20, :match => :first) do
+    within(:css, "article[data-author-id^='#{user1_id}']", wait: 20) do
       expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']")
-      expect(page).not_to have_css('iframe', wait: 5)
+      expect(page).to have_no_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field', wait: 5)
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
       expect(page).to have_content(review) 
@@ -142,6 +140,7 @@ test(id: 42097, title: "Review Post and Reply") do
    
     # *** START EDITING HERE ***
  
+
     # Currently the new post is not visible in a sorted list for up to 10 minutes. The
     # => work around is to either wait 10 minutes or not use the sort by newest.
     #for i in 1..10 do
@@ -157,6 +156,8 @@ test(id: 42097, title: "Review Post and Reply") do
     
     # response
     expect(page).to have_content('Sign in')
+
+
 
     #page.save_screenshot('screenshot_step_5.png')
     # *** STOP EDITING HERE ***
@@ -192,12 +193,12 @@ test(id: 42097, title: "Review Post and Reply") do
 
     # action
     within(:css, '.fyre-login-bar') do
-      page.find(:css, "a[role='button']", :text => 'Sign in', :match => :first).click
+      page.find(:css, "a[role='button']", :text => 'Sign in').click
     end
 
     # reponse 
     within(:css, '.fyre-login-bar') do
-      expect(page).to have_selector(:css, "a[role='button']", :text => user2_id, :match => :first)
+      expect(page).to have_selector(:css, "a[role='button']", :text => user2_id)
     end
 
     #page.save_screenshot('screenshot_step_7.png')
@@ -229,24 +230,20 @@ test(id: 42097, title: "Review Post and Reply") do
   end
 
   step id: 9,
-      action: "Click on the 'Reply' option from top comment.",
-      response: "Do you see a comment widget show up with 'Share' and 'Post' button ?" do
+      action: "Click on the '...More' option.",
+      response: "Do you see 'Flag' option from the drop down ?" do
 
     # *** START EDITING HERE ***
     
 
     # action
     within(:css, "article[data-author-id^='#{user1_id}']") do
-      page.find("a", :text => 'Reply', :match => :first).click
+      page.find(:css, "a", :text => 'More').click
     end
-
+    
     # response
-    within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_content('Post')
-      expect(page).to have_content('Share')
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
-      end
+    within(:css, '.fyre-actions-menu') do
+      expect(page).to have_selector(:css, "li", :text => 'Flag')
     end
 
     #page.save_screenshot('screenshot_step_9.png')
@@ -256,31 +253,19 @@ test(id: 42097, title: "Review Post and Reply") do
 
   
   step id: 10,
-      action: "Enter text in the reply comment widget and click 'Post' button",
-      response: "Do you see your reply get posted and the reply count increments, also empty reply comment widget ?" do
+      action: "Click the 'Flag' option from the drop down",
+      response: "Do you see 'Flag' window opens ?" do
 
     # *** START EDITING HERE ***
-    
-    reply = "User2 Reply " + random_num
 
     # action
-    within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...reply.length do
-          page.find(:css, '.editable.fyre-editor-field>p').send_keys(reply[x])
-        end
-        page.find(:css, 'p', :text => reply)
-      end
-      page.find(:css, "div[role='button']", :text => 'Post', :match => :first).click
+    within(:css, '.fyre-actions-menu') do
+      page.find(:css, "li", :text => 'Flag').click
     end
 
     # response
-    within(:css, "article[data-author-id^='#{user1_id}']", wait: 20) do
-      within(:css, "article[data-author-id^='#{user2_id}']") do
-        expect(page).to have_content(reply)
-        expect(page).to have_content(user2_id)
-      end
+    within(:css, '.fyre-modal') do   
+      expect(page).to have_content("Flag #{user1_id}'s review")
     end
 
     #page.save_screenshot('screenshot_step_10.png')
@@ -289,28 +274,47 @@ test(id: 42097, title: "Review Post and Reply") do
   end
 
   step id: 11,
+      action: "Click the 'Flag' option from the drop down",
+      response: "Do you see 'Flag' window opens ?" do
+
+    # *** START EDITING HERE ***
+
+    # action
+    within(:css, '.fyre-modal') do   
+      expect(page.find(:css, "option[selected='selected']")['value']).to eql('none')
+      page.select 'Offensive', :from => 'flagType'    
+    end
+
+    within(:css, '.fyre-modal') do
+      expect(page).to have_content('Offensive')
+    end
+
+    #page.save_screenshot('screenshot_step_10.png')
+    # *** STOP EDITING HERE ***
+
+  end
+
+  step id: 12,
       action: "Click the '1 Reply' option again.",
       response: "Do you see Reply comment widget closes ? " do
    
     # *** START EDITING HERE ***
     
     # action
-    within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_selector(:css, 'iframe')
-      page.find(:css, "a", :text => '1 Reply').click
+    within(:css, '.fyre-modal') do
+      page.find(:css, 'button', :text => 'OK').click
     end
 
     # response
-    within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_no_selector(:css, 'iframe', wait: 10)
-    end
-    
-    page.find(:css, "a[role='button']", :text => user2_id).hover
-    page.find(:css, "a[role='button']", :text => 'Sign out').click
+    expect(page).to have_content('Review has been flagged.', wait: 10)
 
     #page.save_screenshot('screenshot_step_11.png')
     # *** STOP EDITING HERE ***
 
   end
+
+  page.find(:css, "a[role='button']", :text => user2_id).hover
+  page.find(:css, "a[role='button']", :text => 'Sign out').click
+
  
 end
