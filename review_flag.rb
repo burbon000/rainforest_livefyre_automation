@@ -5,7 +5,7 @@
 test(id: 42126, title: "Review Flag") do
   # You can use any of the following variables in your code:
   # - []
-  
+  Capybara.save_path = "review_flag/"
   # Random number to append to user_ids
   Capybara.default_selector = :css
   Capybara.register_driver :sauce do |app|

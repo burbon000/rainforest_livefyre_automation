@@ -22,6 +22,7 @@ test(id: 27781, title: "Like") do
   Capybara.register_driver :browser_stack do |app|
     Capybara::Selenium::Driver.new(app, :browser => :chrome)
   end 
+
   random_num = rand(100000000...999999999).to_s
 
 

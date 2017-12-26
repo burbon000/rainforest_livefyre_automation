@@ -23,7 +23,10 @@ test(id: 27781, title: "Like") do
     Capybara::Selenium::Driver.new(app, :browser => :chrome)
   end 
   random_num = rand(100000000...999999999).to_s
-
+  username_a = 'rftester483'
+  password_a = 'Rflivefyre483!'
+  username_b = 'rftester927'
+  password_b = 'Rflivefyre927!'
 
   base_url = "https://lemonsarebetter.herokuapp.com/widget.php?network=rainforest-lfep.fyre.co"\
     "&site=382781&articleId=#{random_num}&jsVersion=1.1.10"

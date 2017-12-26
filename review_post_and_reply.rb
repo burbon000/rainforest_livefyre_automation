@@ -5,7 +5,7 @@
 test(id: 42097, title: "Review Post and Reply") do
   # You can use any of the following variables in your code:
   # - []
-  
+  Capybara.save_path = "review_post_and_reply/"
   # Random number to append to user_ids
   Capybara.default_selector = :css
   Capybara.register_driver :sauce do |app|
