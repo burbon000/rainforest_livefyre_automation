@@ -6,8 +6,8 @@ test(id: 42126, title: "Review Flag") do
   # You can use any of the following variables in your code:
   # - []
   Capybara.save_path = "review_flag/"
-  # Random number to append to user_ids
-  Capybara.default_selector = :css
+
+  # used to run Saucelabs with version 45 of Firefox. Version 50 was causing problems with some functionality
   Capybara.register_driver :sauce do |app|
     @desired_cap = {
       'platform': "Windows 7",
@@ -18,10 +18,18 @@ test(id: 42126, title: "Review Flag") do
     }
     Capybara::Selenium::Driver.new(app,
       :browser => :remote,
-      :url => 'http://RFAutomation:5328f84f-5623-41ba-a81e-b5daff615024@ondemand.saucelabs.com:80/wd/hub',
+      :url => 'http://@ondemand.saucelabs.com:80/wd/hub',
       :desired_capabilities => @desired_cap
     )
   end
+  # chrome testing
+  Capybara.register_driver :selenium do |app|
+    Capybara::Selenium::Driver.new(app, :browser => :chrome)
+  end
+
+  # browser name to be used to determine which behavior to emulate
+  browser_name = Capybara.current_session.driver.browser.capabilities.browser_name
+  # Random number to append to user_ids
   random_num = rand(10000000...99999999).to_s
   
   user1_id = "user1_" + random_num
@@ -33,7 +41,7 @@ test(id: 42126, title: "Review Flag") do
   base_url2 = "https://lemonsarebetter.herokuapp.com/widget.php?network=rainforestqa.fyre.co"\
     "&site=383920&articleId=ekrfjherf34823&appType=reviews&userId=user2_#{random_num}"
 
-  window = Capybara.current_session.driver.browser.manage.window
+  #window = Capybara.current_session.driver.browser.manage.window
   #window.maximize
   
   step id: 1,
@@ -82,13 +90,18 @@ test(id: 42126, title: "Review Flag") do
 
     # response
     expect(page).to have_no_selector(:css, 'button', :text => 'Write review', wait: 10)
-    within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do  
-      expect(page).to have_css('.goog-ratings')
+    within(:css, '.fyre-editor.fyre-reviews-editor.fyre-editor-small') do  
       expect(page).to have_content("Post review")
+      expect(page).to have_css('.goog-ratings')
       expect(find(:css, '.goog-ratings')['aria-valuenow']).to eql(nil)
       expect(page.find(:css, '.fyre-editor-title')['placeholder']).to eql("Title...")
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
+      case browser_name
+      when 'firefox'
+        within_frame(find(:css, '[aria-label=editor]')) do
+          expect(page.find(:css, 'p')['text']).to eql(nil)
+        end
+      when 'chrome'
+        expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
       end
     end
 
@@ -112,25 +125,32 @@ test(id: 42126, title: "Review Flag") do
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
       page.find(:css, "input[class='fyre-editor-title']").set(title)
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...review.length do
-          page.find(:css, '.editable.fyre-editor-field>p').native.send_keys(review[x])
+      case browser_name
+      when 'firefox'
+        within_frame(find(:css, '[aria-label=editor]')) do
+          page.find(:css, '.editable.fyre-editor-field>p').click
+          for x in 0...review.length do
+            page.find(:css, '.editable.fyre-editor-field>p').native.send_keys(review[x])
+          end
         end
-        page.find(:css, 'p', :text => review)
+      when 'chrome'
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+        for x in 0...review.length do
+          page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').send_keys(review[x])
+        end
       end
       all(:css, "span[class*='ratings-star']")[star_rating].click
-      page.find(:css, "div[role='button']", :text => 'Post review').click
+      page.find(:css, "div[role='button']", :text => 'Post review', :match => :first).click
     end
 
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", wait: 20) do
-      expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']")
-      expect(page).not_to have_css('iframe', wait: 5)
+      expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']")  
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
       expect(page).to have_content(review) 
     end
+    expect(page).to have_no_selector(:css, 'span.fyre-editor-spinner', wait: 10)   
 
     #page.save_screenshot('screenshot_step_4.png')
     # *** STOP EDITING HERE ***
@@ -158,8 +178,6 @@ test(id: 42126, title: "Review Flag") do
     
     # response
     expect(page).to have_content('Sign in')
-
-
 
     #page.save_screenshot('screenshot_step_5.png')
     # *** STOP EDITING HERE ***
@@ -213,11 +231,12 @@ test(id: 42126, title: "Review Flag") do
       response: "Do you see user1's most recent comment shows up?" do
     # *** START EDITING HERE ***
 
+    # Currently there is a bug that prevents using the latest because it takes 10 minutes for the Post to show up
     # action
     #within(:css, '.fyre-widget') do
     #  page.find(:css, '.fyre-reviews-write').hover
     #end
-    # Currently there is a bug that prevents using the latest because it takes 10 minutes for the Post to show up
+
     #within(:css, '.fyre-stream-sort') do
     #  page.find(:css, 'label', :text => 'Most helpful').click
     #  page.find(:css, 'a', :text => 'Newest').click

@@ -5,9 +5,11 @@
 test(id: 42097, title: "Review Post and Reply") do
   # You can use any of the following variables in your code:
   # - []
+
+  # added by Daniel
   Capybara.save_path = "review_post_and_reply/"
-  # Random number to append to user_ids
-  Capybara.default_selector = :css
+  
+  # used to run Saucelabs with version 45 of Firefox. Version 50 was causing problems with some functionality
   Capybara.register_driver :sauce do |app|
     @desired_cap = {
       'platform': "Windows 7",
@@ -18,10 +20,18 @@ test(id: 42097, title: "Review Post and Reply") do
     }
     Capybara::Selenium::Driver.new(app,
       :browser => :remote,
-      :url => 'http://RFAutomation:5328f84f-5623-41ba-a81e-b5daff615024@ondemand.saucelabs.com:80/wd/hub',
+      :url => 'http://@ondemand.saucelabs.com:80/wd/hub',
       :desired_capabilities => @desired_cap
     )
   end
+  # chrome testing
+  Capybara.register_driver :selenium do |app|
+    Capybara::Selenium::Driver.new(app, :browser => :firefox)
+  end
+
+  # browser name to be used to determine which behavior to emulate
+  browser_name = Capybara.current_session.driver.browser.capabilities.browser_name
+  # Random number to append to user_ids
   random_num = rand(10000000...99999999).to_s
   
   user1_id = "user1_" + random_num
@@ -33,8 +43,6 @@ test(id: 42097, title: "Review Post and Reply") do
   base_url2 = "https://lemonsarebetter.herokuapp.com/widget.php?network=rainforestqa.fyre.co"\
     "&site=383920&articleId=ekrfjherf34823&appType=reviews&userId=user2_#{random_num}"
 
-  window = Capybara.current_session.driver.browser.manage.window
-  #window.maximize
   
   step id: 1,
       action: "Review app url loads",
@@ -87,8 +95,13 @@ test(id: 42097, title: "Review Post and Reply") do
       expect(page).to have_content("Post review")
       expect(find(:css, '.goog-ratings')['aria-valuenow']).to eql(nil)
       expect(page.find(:css, '.fyre-editor-title')['placeholder']).to eql("Title...")
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
+      case browser_name
+      when 'firefox'
+        within_frame(find(:css, '[aria-label=editor]')) do
+          expect(page.find(:css, 'p')['text']).to eql(nil)
+        end
+      when 'chrome'
+        expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
       end
     end
 
@@ -112,12 +125,21 @@ test(id: 42097, title: "Review Post and Reply") do
     # action
     within(:css, ".fyre-editor.fyre-reviews-editor.fyre-editor-small") do
       page.find(:css, "input[class='fyre-editor-title']").set(title)
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...review.length do
-          page.find(:css, '.editable.fyre-editor-field>p').send_keys(review[x])
+      case browser_name
+      when 'firefox'
+        within_frame(find(:css, '[aria-label=editor]')) do
+          page.find(:css, '.editable.fyre-editor-field>p').click
+          # typing out individual chars because of occassional errors during post
+          for x in 0...review.length do
+            page.find(:css, '.editable.fyre-editor-field>p').send_keys(review[x])
+          end
+          page.find(:css, 'p', :text => review)
         end
-        page.find(:css, 'p', :text => review)
+      when 'chrome'
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+        for x in 0...review.length do
+          page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').send_keys(review[x])
+        end
       end
       all(:css, "span[class*='ratings-star']")[star_rating].click
       page.find(:css, "div[role='button']", :text => 'Post review', :match => :first).click
@@ -126,11 +148,11 @@ test(id: 42097, title: "Review Post and Reply") do
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", wait: 20, :match => :first) do
       expect(page).to have_selector(:css, ".fyre-reviews-rated>label[style^='#{rating_style}']")
-      expect(page).not_to have_css('iframe', wait: 5)
       expect(page).to have_content(user1_id)
       expect(page).to have_content(title)
       expect(page).to have_content(review) 
     end
+    expect(page).to have_no_selector(:css, 'span.fyre-editor-spinner', wait: 10)
 
     #page.save_screenshot('screenshot_step_4.png')
     # *** STOP EDITING HERE ***
@@ -143,7 +165,7 @@ test(id: 42097, title: "Review Post and Reply") do
     # *** START EDITING HERE ***
  
     # Currently the new post is not visible in a sorted list for up to 10 minutes. The
-    # => work around is to either wait 10 minutes or not use the sort by newest.
+    # => work around is to either wait 10 minutes or not use the sort by newest. Uncomment to use sort
     #for i in 1..10 do
     #  page.find(:css, "a[role='button']", :text => user1_id).click     
     #  sleep(60)
@@ -210,11 +232,13 @@ test(id: 42097, title: "Review Post and Reply") do
       response: "Do you see user1's most recent comment shows up?" do
     # *** START EDITING HERE ***
 
+    # Currently there is a bug that prevents using the latest because it takes 10 minutes for the Post to show up
+    # => uncomment below if you want to use the sort and you have uncommented the section above that waits 10 minutes
     # action
     #within(:css, '.fyre-widget') do
     #  page.find(:css, '.fyre-reviews-write').hover
     #end
-    # Currently there is a bug that prevents using the latest because it takes 10 minutes for the Post to show up
+    
     #within(:css, '.fyre-stream-sort') do
     #  page.find(:css, 'label', :text => 'Most helpful').click
     #  page.find(:css, 'a', :text => 'Newest').click
@@ -244,8 +268,13 @@ test(id: 42097, title: "Review Post and Reply") do
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
       expect(page).to have_content('Post')
       expect(page).to have_content('Share')
-      within_frame(find(:css, '[aria-label=editor]')) do
-        expect(page.find(:css, 'p')['text']).to eql(nil)
+      case browser_name
+      when 'firefox'
+        within_frame(find(:css, '[aria-label=editor]')) do
+          expect(page.find(:css, 'p')['text']).to eql(nil)
+        end
+      when 'chrome'
+        expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
       end
     end
 
@@ -265,13 +294,22 @@ test(id: 42097, title: "Review Post and Reply") do
 
     # action
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      within_frame(find(:css, '[aria-label=editor]')) do
-        page.find(:css, '.editable.fyre-editor-field>p').click
-        for x in 0...reply.length do
-          page.find(:css, '.editable.fyre-editor-field>p').send_keys(reply[x])
+      case browser_name
+      when 'firefox'
+        within_frame(find(:css, '[aria-label=editor]')) do
+          page.find(:css, '.editable.fyre-editor-field>p').click
+          for x in 0...reply.length do
+            page.find(:css, '.editable.fyre-editor-field>p').send_keys(reply[x])
+          end
+          page.find(:css, 'p', :text => reply)
         end
-        page.find(:css, 'p', :text => reply)
+      when 'chrome'
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').click
+        for x in 0...reply.length do
+          page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').send_keys(reply[x])
+        end
       end
+
       page.find(:css, "div[role='button']", :text => 'Post', :match => :first).click
     end
 
@@ -282,6 +320,7 @@ test(id: 42097, title: "Review Post and Reply") do
         expect(page).to have_content(user2_id)
       end
     end
+    expect(page).to have_no_selector(:css, 'span.fyre-editor-spinner', wait: 10) 
 
     #page.save_screenshot('screenshot_step_10.png')
     # *** STOP EDITING HERE ***
@@ -296,13 +335,23 @@ test(id: 42097, title: "Review Post and Reply") do
     
     # action
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_selector(:css, 'iframe')
+      case browser_name
+      when 'firefox'
+        expect(page).to have_selector(:css, 'iframe')
+      when 'chrome'
+        expect(page).to have_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field')
+      end
       page.find(:css, "a", :text => '1 Reply').click
     end
 
     # response
     within(:css, "article[data-author-id^='#{user1_id}']", :match => :first) do
-      expect(page).to have_no_selector(:css, 'iframe', wait: 10)
+      case browser_name
+      when 'firefox'
+        expect(page).to have_no_selector(:css, 'iframe', wait: 10)
+      when 'chrome'
+        expect(page).to have_no_selector(:css, '.fyre-editor-editable.editable.fyre-editor-field', wait: 10)
+      end
     end
     
     page.find(:css, "a[role='button']", :text => user2_id).hover

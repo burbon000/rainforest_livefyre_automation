@@ -6,6 +6,7 @@ test(id: 27781, title: "Like") do
   # You can use any of the following variables in your code:
   # - []
   
+  # used to run Saucelabs with version 45 of Firefox. Version 50 was causing problems with some functionality
   Capybara.register_driver :sauce do |app|
     @desired_cap = {
       'platform': "Windows 7",
@@ -15,22 +16,30 @@ test(id: 27781, title: "Like") do
     }
     Capybara::Selenium::Driver.new(app,
       :browser => :remote,
-      :url => 'http://RFAutomation:5328f84f-5623-41ba-a81e-b5daff615024@ondemand.saucelabs.com:80/wd/hub',
+      :url => 'http://@ondemand.saucelabs.com:80/wd/hub',
       :desired_capabilities => @desired_cap
     )
   end
-  Capybara.register_driver :browser_stack do |app|
+  # chrome testing
+  Capybara.register_driver :selenium do |app|
     Capybara::Selenium::Driver.new(app, :browser => :chrome)
-  end 
+  end
 
+  # browser name to be used to determine which behavior to emulate
+  browser_name = Capybara.current_session.driver.browser.capabilities.browser_name
+  # Random number to append to user_ids
   random_num = rand(100000000...999999999).to_s
+
+  # usernames and passwords reomved for posting to github
+  username_a = ''
+  password_a = ''
+  username_b = ''
+  password_b = ''
 
 
   base_url = "https://lemonsarebetter.herokuapp.com/widget.php?network=rainforest-lfep.fyre.co"\
     "&site=382781&articleId=#{random_num}&jsVersion=1.1.10"
   
-  window = Capybara.current_session.driver.browser.manage.window
-  #window.maximize
   visit base_url
 
   step id: 1,
@@ -77,10 +86,19 @@ test(id: 27781, title: "Like") do
     # *** START EDITING HERE ***
     comment = 'Test Comment'
     # action
-    within_frame(find(:css, '[aria-label=editor]')) do
-      expect(page.find(:css, 'p')['text']).to eql(nil)
-      page.find(:css, "body[role='textbox']").click
-      page.find(:css, "body[role='textbox']").native.send_keys(comment)
+    case browser_name
+    when 'firefox'
+      within_frame(find(:css, '[aria-label=editor]')) do
+        expect(page.find(:css, 'p')['text']).to eql(nil)
+        page.find(:css, "body[role='textbox']").click
+        page.find(:css, "body[role='textbox']").native.send_keys(comment)
+      end
+    when 'chrome'
+      expect(page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field')['text']).to eql(nil)
+      page.find(:css, ".fyre-editor-editable.editable.fyre-editor-field").click
+      for x in 0...comment.length do
+        page.find(:css, '.fyre-editor-editable.editable.fyre-editor-field').native.send_keys(comment[x])
+      end
     end
     page.find("div[role='button']", :text => 'Post comment').click
 
